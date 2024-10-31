@@ -1,31 +1,26 @@
 import subprocess
-import prettytable as pt
+import json
 
-def get_docker_containers():
-    # Ejecuta el comando docker ps -a para obtener la lista de contenedores
-    result = subprocess.run(['docker', 'ps', '-a'], stdout=subprocess.PIPE)
+def docker_ps_json():
+    try:
+        # Ejecuta el comando 'docker ps -a'
+        result = subprocess.run(['docker', 'ps', '-a', '--format', '{{json .}}'], capture_output=True, text=True, check=True)
+        
+        # Separa las líneas de la salida
+        lines = result.stdout.strip().split('\n')
+        
+        # Convierte cada línea de JSON a un diccionario
+        containers = [json.loads(line) for line in lines]
+        
+        # Convierte la lista de contenedores a JSON
+        json_output = json.dumps(containers, indent=4)
+        return json_output
     
-    # Decodifica la salida del comando
-    output = result.stdout.decode('utf-8')
-    
-    # Divide las líneas de la salida
-    lines = output.splitlines()
-    
-    # El encabezado es la primera línea
-    header = lines[0].split()
-    
-    # El resto son los contenedores
-    containers = lines[1:]
-    
-    # Usa PrettyTable para mostrar los datos en un formato más legible
-    table = pt.PrettyTable(header)
-    
-    for container in containers:
-        # Divide la línea en columnas
-        columns = container.split(maxsplit=len(header) - 1)
-        table.add_row(columns)
-    
-    print(table)
+    except subprocess.CalledProcessError as e:
+        print(f"Error al ejecutar el comando: {e}")
+        return None
 
 if __name__ == "__main__":
-    get_docker_containers()
+    output = docker_ps_json()
+    if output:
+        print(output)
