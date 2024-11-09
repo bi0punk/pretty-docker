@@ -3,7 +3,6 @@ import json
 
 def docker_ps_json():
     try:
-        # Ejecuta el comando 'docker ps -a'
         result = subprocess.run(['docker', 'ps', '-a', '--format', '{{json .}}'], capture_output=True, text=True, check=True)
         lines = result.stdout.strip().split('\n')
         containers = [json.loads(line) for line in lines]
