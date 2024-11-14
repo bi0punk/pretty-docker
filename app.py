@@ -5,7 +5,13 @@ def docker_ps_json():
     try:
         result = subprocess.run(['docker', 'ps', '-a', '--format', '{{json .}}'], capture_output=True, text=True, check=True)
         lines = result.stdout.strip().split('\n')
-        containers = [json.loads(line) for line in lines]
+        
+        containers = []
+        for line in lines:
+            container = json.loads(line)
+            container.pop("Labels", None)  # Eliminar la clave "Labels" si existe
+            containers.append(container)
+        
         json_output = json.dumps(containers, indent=4)
         return json_output
     
