@@ -1,4 +1,4 @@
- from textual.app import App, ComposeResult
+from textual.app import App, ComposeResult
 from textual.widgets import Collapsible, Footer, Label, Markdown
 
 LETO = """\
@@ -30,9 +30,9 @@ class CollapsibleApp(App[None]):
     def compose(self) -> ComposeResult:
         """Compose app with collapsible containers."""
         yield Footer()
-        with Collapsible(collapsed=False, title="Leto"):
+        with Collapsible(collapsed=True, title="Leto"):
             yield Label(LETO)
-        yield Collapsible(Markdown(JESSICA), collapsed=False, title="Jessica")
+        yield Collapsible(Markdown(JESSICA), collapsed=True, title="Jessica")
         with Collapsible(collapsed=True, title="Paul"):
             yield Markdown(PAUL)
 
