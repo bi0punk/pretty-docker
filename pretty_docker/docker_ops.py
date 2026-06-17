@@ -56,8 +56,9 @@ def get_client() -> docker.DockerClient:
 
 
 def list_containers(all: bool = True) -> list[ContainerInfo]:
-    client = get_client()
+    client = None
     try:
+        client = get_client()
         containers = client.containers.list(all=all)
         return [_container_to_info(c) for c in containers]
     except DockerException as e:
@@ -65,12 +66,14 @@ def list_containers(all: bool = True) -> list[ContainerInfo]:
             f"Failed to list containers: {e}"
         ) from e
     finally:
-        client.close()
+        if client is not None:
+            client.close()
 
 
 def get_container_details(name: str) -> ContainerInfo:
-    client = get_client()
+    client = None
     try:
+        client = get_client()
         container = client.containers.get(name)
         container.reload()
         return _container_to_info(container)
@@ -81,4 +84,5 @@ def get_container_details(name: str) -> ContainerInfo:
             f"Failed to inspect container '{name}': {e}"
         ) from e
     finally:
-        client.close()
+        if client is not None:
+            client.close()

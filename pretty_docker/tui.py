@@ -87,8 +87,11 @@ class DockerTuiApp(App[None]):
                 f"[bold]Image:[/bold] {c.image}\n"
                 f"[bold]Ports:[/bold] {c.format_ports()}"
             )
-            collapsible.compose_add_child(details)
+            collapsible.mount(details)
             container_list.mount(collapsible)
+        loading_msg = container_list.query("#loading-msg")
+        if loading_msg:
+            loading_msg.remove()
         if self.loading:
             container_list.mount(
                 Static("[dim]Loading containers...[/dim]", id="loading-msg")
