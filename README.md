@@ -1,35 +1,75 @@
 # pretty-docker
 
-Terminal User Interface (TUI) and CLI tool for viewing Docker container information in a clean, formatted way.
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python)](https://python.org)
+[![Textual](https://img.shields.io/badge/Textual-8.0%2B-7300E6)](https://textual.textualize.io/)
+[![Rich](https://img.shields.io/badge/Rich-13.0%2B-F7A81B)](https://rich.readthedocs.io/)
+[![Docker SDK](https://img.shields.io/badge/Docker%20SDK-7.0%2B-2496ED?logo=docker)](https://docker-py.readthedocs.io/)
+[![CI](https://github.com/drbash/pretty-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/drbash/pretty-docker/actions)
 
-Built with [Textual](https://textual.textualize.io/) for the TUI and [Rich](https://rich.readthedocs.io/) for the CLI, using the [Docker SDK](https://docker-py.readthedocs.io/) instead of shelling out to the `docker` CLI.
+Terminal User Interface (TUI) y CLI tool para ver información de contenedores Docker de forma limpia y formateada. Construido con Textual para la TUI y Rich para el CLI, usando el Docker SDK en lugar de shell commands.
 
-## Context
+## Contenido
 
-Managing Docker containers typically requires typing `docker ps -a` repeatedly, then `docker inspect` to get details. `pretty-docker` wraps these operations into two convenient interfaces:
+- [Características](#caracter%C3%ADsticas)
+- [Stack](#stack)
+- [Estructura](#estructura)
+- [Requisitos](#requisitos)
+- [Instalación](#instalaci%C3%B3n)
+- [Uso](#uso)
+- [Tests](#tests)
+- [Configuración](#configuraci%C3%B3n)
+- [CI/CD](#cicd)
+- [Limitaciones / Roadmap](#limitaciones--roadmap)
+- [Licencia](#licencia)
 
-- **TUI mode**: Interactive terminal app with collapsible panels for each container. Shows state, image, and port mappings at a glance. Expand any container to see full details. Keyboard-driven workflow.
-- **CLI mode**: Quick formatted output (table or JSON) for scripting or when you just need a snapshot.
+## Características
 
-The original version used `subprocess` to call the Docker CLI and had an outdated Textual version with minimal error handling. This refactored version:
-
-- Uses the **Docker SDK** for reliable, typed API access
-- Runs on **Textual 8.x** with async workers for non-blocking UI
-- Has **proper error handling** with user-facing notifications
-- **Formats port mappings** correctly (instead of raw Python repr)
+- **Modo TUI**: app interactiva con paneles colapsables para cada contenedor
+- **Modo CLI**: salida formateada en tabla o JSON para scripting
+- **Docker SDK nativo**: sin dependencia del CLI `docker`
+- **Async Workers**: UI no bloqueante con Textual 8.x
+- **Formateo de puertos**: muestra correctamente host:container en lugar de repr Python
+- **Filtro por estado**: muestra solo contenedores running con `--running`
+- **Atajos de teclado**: expandir/colapsar, refresh, quit
 
 ## Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Language | Python 3.10+ |
+| Componente | Tecnología |
+|---|---|
+| Lenguaje | Python 3.10+ |
 | TUI Framework | Textual >= 8.0 |
 | CLI Formatting | Rich >= 13.0 |
 | Docker Integration | Docker SDK >= 7.0 |
+| Testing | pytest |
 
-## Installation
+## Estructura
 
-### From source
+```
+pretty-docker/
+├── pretty_docker/
+│   ├── __init__.py
+│   ├── cli.py               # CLI mode (Rich tables / JSON)
+│   ├── tui.py               # TUI mode (Textual interactive)
+│   ├── docker_ops.py        # Docker SDK wrapper
+│   └── models.py            # ContainerInfo, PortMapping
+├── tests/
+│   ├── __init__.py
+│   └── test_docker_ops.py   # Tests con mocks
+├── .github/workflows/ci.yml
+├── pyproject.toml
+└── README.md
+```
+
+## Requisitos
+
+- Python 3.10+
+- Docker Engine en ejecución
+- Docker SDK para Python
+
+## Instalación
+
+### Desde fuente
 
 ```bash
 git clone https://github.com/drbash/pretty-docker.git
@@ -37,42 +77,40 @@ cd pretty-docker
 pip install -e .
 ```
 
-### Using pip (when published)
+### Usando pip (cuando esté publicado)
 
 ```bash
 pip install pretty-docker
 ```
 
-### Using uv (alternative)
+### Usando uv
 
 ```bash
 uv pip install -e .
 ```
 
-## Usage
+## Uso
 
 ### TUI mode
 
-Interactive terminal interface:
+Interfaz terminal interactiva:
 
 ```bash
 pretty-docker-tui
 ```
 
-**Keyboard shortcuts:**
+**Atajos de teclado:**
 
-| Key | Action |
-|-----|--------|
-| `c` | Collapse all containers |
-| `e` | Expand all containers |
-| `r` | Refresh container list |
+| Tecla | Acción |
+|---|---|
+| `c` | Collapse all |
+| `e` | Expand all |
+| `r` | Refresh |
 | `q` | Quit |
 
-Each container appears as a collapsible panel showing its name. Press **Enter** or click to expand and see state, image, and port details.
+Cada contenedor aparece como panel colapsable. Presiona **Enter** o haz clic para expandir.
 
 ### CLI mode
-
-Quick container overview:
 
 ```bash
 # Table format (default)
@@ -88,9 +126,8 @@ pretty-docker --json
 pretty-docker --running --json
 ```
 
-### Example outputs
+### Ejemplo salida CLI
 
-**CLI table:**
 ```
 ┌───────────────┬─────────┬────────────────┬──────────────────┐
 │ Name          │ State   │ Image          │ Ports            │
@@ -101,88 +138,44 @@ pretty-docker --running --json
 └───────────────┴─────────┴────────────────┴──────────────────┘
 ```
 
-**CLI JSON:**
-```json
-[
-  {
-    "name": "my_app",
-    "state": "running",
-    "image": "nginx:latest",
-    "ports": [
-      {
-        "container_port": "80/tcp",
-        "host_ip": "0.0.0.0",
-        "host_port": "8080"
-      }
-    ]
-  }
-]
-```
-
-**TUI screen (conceptual):**
-```
-┌─────────────────────────────────────────────────────┐
-│ Pretty Docker                                       │
-├─────────────────────────────────────────────────────┤
-│ ┌─ my_app ────────────────────────────────────────┐ │
-│ │ State:  running                                  │ │
-│ │ Image:  nginx:latest                             │ │
-│ │ Ports:  0.0.0.0:8080 -> 80/tcp                   │ │
-│ └──────────────────────────────────────────────────┘ │
-│ ┌─ redis_cache ────────────────────────────────────┐ │
-│ │ State:  running                                  │ │
-│ │ Image:  redis:7-alpine                           │ │
-│ │ Ports:  0.0.0.0:6379 -> 6379/tcp                 │ │
-│ └──────────────────────────────────────────────────┘ │
-│ ┌─ old_worker ─────────────────────────────────────┐ │
-│ │ State:  exited                                   │ │
-│ │ Image:  python:3.12                              │ │
-│ │ Ports:  No ports exposed                         │ │
-│ └──────────────────────────────────────────────────┘ │
-├─────────────────────────────────────────────────────┤
-│ C Collapse All  E Expand All  R Refresh  Q Quit     │
-└─────────────────────────────────────────────────────┘
-```
-
-## Development
-
-### Setup
+## Tests
 
 ```bash
-git clone https://github.com/drbash/pretty-docker.git
-cd pretty-docker
-pip install -e ".[dev]"
-```
-
-### Running tests
-
-```bash
+pip install pytest
 pytest
 ```
 
-### Project structure
+## Configuración
 
-```
-pretty-docker/
-├── pyproject.toml           # Package config, dependencies, entry points
-├── pretty_docker/
-│   ├── __init__.py
-│   ├── cli.py               # CLI mode with Rich tables / JSON output
-│   ├── tui.py               # TUI mode with Textual interactive interface
-│   ├── docker_ops.py        # Docker SDK wrapper with error handling
-│   └── models.py            # Data models (ContainerInfo, PortMapping)
-└── tests/
-    ├── __init__.py
-    └── test_docker_ops.py   # Unit tests with mocked Docker SDK
-```
+Variables de entorno (ver `.env.example`):
 
-### Entry points
+| Variable | Default | Descripción |
+|---|---|---|
+| `DOCKER_HOST` | `unix:///var/run/docker.sock` | Socket Docker |
 
-| Command | Module | Description |
-|---------|--------|-------------|
+## CI/CD
+
+GitHub Actions ejecuta lint (Ruff) y tests (pytest) en cada push/PR.
+
+## Entry points
+
+| Comando | Módulo | Descripción |
+|---|---|---|
 | `pretty-docker` | `pretty_docker.cli:main` | CLI mode |
 | `pretty-docker-tui` | `pretty_docker.tui:main` | TUI mode |
 
-## License
+## Limitaciones / Roadmap
+
+- [x] TUI interactiva con paneles colapsables
+- [x] CLI con tabla y JSON
+- [x] Docker SDK nativo
+- [ ] Filtros por nombre/imagen
+- [ ] Acciones desde TUI (start, stop, restart)
+- [ ] Logs en vivo de contenedores
+- [ ] Estadísticas de recursos (CPU, RAM)
+- [ ] Modo vigilancia (auto-refresh periódico)
+- [ ] Soporte Docker Swarm / Kubernetes
+
+## Licencia
 
 MIT
