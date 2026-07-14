@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from asyncio import to_thread
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -62,20 +63,33 @@ class DockerTuiApp(App[None]):
 
     async def _load_containers(self) -> list[ContainerInfo]:
         try:
-            self.containers = await self._fetch_containers()
+            containers = await self._fetch_containers()
+            self.loading = False
+            self.containers = containers
         except DockerNotAvailableError as e:
             self.notify(str(e), severity="error", timeout=10)
+            self.loading = False
             self.containers = []
         except ContainerNotFoundError as e:
             self.notify(str(e), severity="error", timeout=10)
-            self.containers = []
-        finally:
             self.loading = False
+            self.containers = []
         return self.containers
 
     async def _fetch_containers(self) -> list[ContainerInfo]:
-        from asyncio import to_thread
-        return await to_thread(list_containers, True)
+        return await to_thread(list_containers, show_all=True)
+
+    def watch_loading(self, loading: bool) -> None:
+        container_list = self.query_one("#container-list", VerticalScroll)
+        loading_msg = container_list.query("#loading-msg")
+        if loading:
+            if not loading_msg:
+                container_list.mount(
+                    Static("[dim]Loading containers...[/dim]", id="loading-msg")
+                )
+        else:
+            if loading_msg:
+                loading_msg.remove()
 
     def watch_containers(self, containers: list[ContainerInfo]) -> None:
         container_list = self.query_one("#container-list", VerticalScroll)
@@ -89,13 +103,6 @@ class DockerTuiApp(App[None]):
             )
             collapsible.mount(details)
             container_list.mount(collapsible)
-        loading_msg = container_list.query("#loading-msg")
-        if loading_msg:
-            loading_msg.remove()
-        if self.loading:
-            container_list.mount(
-                Static("[dim]Loading containers...[/dim]", id="loading-msg")
-            )
 
     def action_collapse_all(self) -> None:
         for c in self.query(Collapsible):

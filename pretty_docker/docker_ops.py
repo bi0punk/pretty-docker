@@ -55,11 +55,11 @@ def get_client() -> docker.DockerClient:
         ) from e
 
 
-def list_containers(all: bool = True) -> list[ContainerInfo]:
+def list_containers(show_all: bool = True) -> list[ContainerInfo]:
     client = None
     try:
         client = get_client()
-        containers = client.containers.list(all=all)
+        containers = client.containers.list(all=show_all)
         return [_container_to_info(c) for c in containers]
     except DockerException as e:
         raise DockerNotAvailableError(
