@@ -1,37 +1,61 @@
 # pretty-docker
 
+Terminal User Interface (TUI) y CLI tool para ver información de contenedores Docker de forma limpia y formateada. Construido con Textual para la TUI y Rich para el CLI, usando el Docker SDK en lugar de shell commands.
+
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python)](https://python.org)
 [![Textual](https://img.shields.io/badge/Textual-8.0%2B-7300E6)](https://textual.textualize.io/)
 [![Rich](https://img.shields.io/badge/Rich-13.0%2B-F7A81B)](https://rich.readthedocs.io/)
 [![Docker SDK](https://img.shields.io/badge/Docker%20SDK-7.0%2B-2496ED?logo=docker)](https://docker-py.readthedocs.io/)
-[![CI](https://github.com/drbash/pretty-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/drbash/pretty-docker/actions)
-
-Terminal User Interface (TUI) y CLI tool para ver información de contenedores Docker de forma limpia y formateada. Construido con Textual para la TUI y Rich para el CLI, usando el Docker SDK en lugar de shell commands.
+[![CI](https://github.com/bi0punk/pretty-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/bi0punk/pretty-docker/actions)
 
 ## Contenido
 
-- [Características](#caracter%C3%ADsticas)
+- [Características](#características)
+- [Arquitectura](#arquitectura)
 - [Stack](#stack)
-- [Estructura](#estructura)
-- [Requisitos](#requisitos)
-- [Instalación](#instalaci%C3%B3n)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Instalación](#instalación)
 - [Uso](#uso)
-- [Tests](#tests)
-- [Configuración](#configuraci%C3%B3n)
-- [CI/CD](#cicd)
-- [Limitaciones / Roadmap](#limitaciones--roadmap)
+- [Configuración](#configuración)
+- [Tests / CI](#tests--ci)
+- [Roadmap](#roadmap)
 - [Licencia](#licencia)
 
 ## Características
 
-- **Modo TUI**: app interactiva con paneles colapsables para cada contenedor
-- **Modo CLI**: salida formateada en tabla o JSON para scripting
-- **Docker SDK nativo**: sin dependencia del CLI `docker`
-- **Async Workers**: UI no bloqueante con Textual 8.x
-- **Formateo de puertos**: muestra correctamente host:container en lugar de repr Python
-- **Filtro por estado**: muestra solo contenedores running con `--running`
-- **Atajos de teclado**: expandir/colapsar, refresh, quit
+- **Modo TUI**: app interactiva con paneles colapsables para cada contenedor.
+- **Modo CLI**: salida formateada en tabla o JSON para scripting.
+- **Docker SDK nativo**: sin dependencia del CLI `docker`.
+- **Async Workers**: UI no bloqueante con Textual 8.x.
+- **Formateo de puertos**: muestra correctamente host:container en lugar de repr Python.
+- **Filtro por estado**: muestra solo contenedores running con `--running`.
+- **Atajos de teclado**: expandir/colapsar, refresh, quit.
+
+## Arquitectura
+
+```mermaid
+flowchart TD
+  subgraph Entradas
+    CLI[pretty-docker<br/>pretty_docker.cli:main]
+    TUI[pretty-docker-tui<br/>pretty_docker.tui:main]
+  end
+
+  CLI --> OPS[docker_ops]
+  TUI --> OPS
+
+  OPS --> CLIENT[get_client<br/>docker.from_env]
+  CLIENT --> ENGINE[(Docker Engine<br/>DOCKER_HOST)]
+
+  OPS --> LIST[list_containers]
+  OPS --> DETAIL[get_container_details]
+  LIST --> CONV[_container_to_info]
+  DETAIL --> CONV
+  CONV --> MODELS[models<br/>ContainerInfo / PortMapping]
+
+  MODELS --> RICH[Rich: tabla / JSON]
+  MODELS --> TX[Textual: paneles colapsables]
+```
 
 ## Stack
 
@@ -43,7 +67,7 @@ Terminal User Interface (TUI) y CLI tool para ver información de contenedores D
 | Docker Integration | Docker SDK >= 7.0 |
 | Testing | pytest |
 
-## Estructura
+## Estructura del repositorio
 
 ```
 pretty-docker/
@@ -58,21 +82,18 @@ pretty-docker/
 │   └── test_docker_ops.py   # Tests con mocks
 ├── .github/workflows/ci.yml
 ├── pyproject.toml
+├── LICENSE
 └── README.md
 ```
 
-## Requisitos
-
-- Python 3.10+
-- Docker Engine en ejecución
-- Docker SDK para Python
-
 ## Instalación
+
+Requisitos: Python 3.10+, Docker Engine en ejecución y Docker SDK para Python.
 
 ### Desde fuente
 
 ```bash
-git clone https://github.com/drbash/pretty-docker.git
+git clone https://github.com/bi0punk/pretty-docker.git
 cd pretty-docker
 pip install -e .
 ```
@@ -93,13 +114,11 @@ uv pip install -e .
 
 ### TUI mode
 
-Interfaz terminal interactiva:
-
 ```bash
 pretty-docker-tui
 ```
 
-**Atajos de teclado:**
+Atajos de teclado:
 
 | Tecla | Acción |
 |---|---|
@@ -126,7 +145,7 @@ pretty-docker --json
 pretty-docker --running --json
 ```
 
-### Ejemplo salida CLI
+Ejemplo de salida CLI:
 
 ```
 ┌───────────────┬─────────┬────────────────┬──────────────────┐
@@ -138,12 +157,12 @@ pretty-docker --running --json
 └───────────────┴─────────┴────────────────┴──────────────────┘
 ```
 
-## Tests
+### Entry points
 
-```bash
-pip install pytest
-pytest
-```
+| Comando | Módulo | Descripción |
+|---|---|---|
+| `pretty-docker` | `pretty_docker.cli:main` | CLI mode |
+| `pretty-docker-tui` | `pretty_docker.tui:main` | TUI mode |
 
 ## Configuración
 
@@ -153,18 +172,16 @@ Variables de entorno (ver `.env.example`):
 |---|---|---|
 | `DOCKER_HOST` | `unix:///var/run/docker.sock` | Socket Docker |
 
-## CI/CD
+## Tests / CI
 
-GitHub Actions ejecuta lint (Ruff) y tests (pytest) en cada push/PR.
+```bash
+pip install pytest
+pytest
+```
 
-## Entry points
+El workflow `.github/workflows/ci.yml` ejecuta lint (Ruff) y tests (pytest) en cada push/PR.
 
-| Comando | Módulo | Descripción |
-|---|---|---|
-| `pretty-docker` | `pretty_docker.cli:main` | CLI mode |
-| `pretty-docker-tui` | `pretty_docker.tui:main` | TUI mode |
-
-## Limitaciones / Roadmap
+## Roadmap
 
 - [x] TUI interactiva con paneles colapsables
 - [x] CLI con tabla y JSON
