@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from asyncio import to_thread
+from typing import ClassVar
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -39,7 +40,7 @@ class DockerTuiApp(App[None]):
     }
     """
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("c", "collapse_all", "Collapse All"),
         Binding("e", "expand_all", "Expand All"),
         Binding("r", "refresh", "Refresh"),

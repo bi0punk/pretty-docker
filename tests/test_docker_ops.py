@@ -163,10 +163,10 @@ class TestListContainers:
         mock_from_env.return_value = mock_client
         mock_client.containers.list.return_value = []
 
-        list_containers(all=True)
+        list_containers(show_all=True)
         mock_client.containers.list.assert_called_with(all=True)
 
-        list_containers(all=False)
+        list_containers(show_all=False)
         mock_client.containers.list.assert_called_with(all=False)
 
 

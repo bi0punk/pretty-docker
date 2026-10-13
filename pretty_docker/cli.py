@@ -56,14 +56,15 @@ def parse_args(argv: list[str] | None = None) -> Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     console = Console()
+    err_console = Console(stderr=True)
 
     try:
-        containers = list_containers(all=not args.running)
+        containers = list_containers(show_all=not args.running)
     except DockerNotAvailableError as e:
-        console.print(f"[red]Error:[/red] {e}", stderr=True)
+        err_console.print(f"[red]Error:[/red] {e}")
         return 1
     except ContainerNotFoundError as e:
-        console.print(f"[red]Error:[/red] {e}", stderr=True)
+        err_console.print(f"[red]Error:[/red] {e}")
         return 1
 
     if not containers:
